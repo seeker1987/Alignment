@@ -3,7 +3,7 @@ CARA (Context-Aligned Reasoning Architecture) - Core Reference Engine
 Implements the 3-Plane System, Invariant Registry, and Action Governor State Machine.
 """
 
-from typing import Dict, List, Any, Callable, Optional
+from typing import Dict, List, Any, Callable, Optional, Tuple
 from enum import Enum
 
 class GovernorDecision(Enum):
