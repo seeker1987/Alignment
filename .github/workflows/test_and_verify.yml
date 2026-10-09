@@ -1,0 +1,51 @@
+name: CARA Alignment CI & Verification Suite
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        python-version: ["3.9", "3.10", "3.11", "3.12"]
+
+    steps:
+    - uses: actions/checkout@v4
+
+    - name: Set up Python ${{ matrix.python-version }}
+      uses: actions/setup-python@v5
+      with:
+        python-version: ${{ matrix.python-version }}
+
+    - name: Install Package in Editable Mode
+      run: |
+        cd projects/cara-alignment
+        pip install -e .
+
+    - name: Run Package Unit Tests
+      run: |
+        cd projects/cara-alignment
+        python3 tests/test_package.py
+
+    - name: Run Production Invariant Tests (3 Suites)
+      run: |
+        cd projects/cara-alignment
+        python3 benchmarks/production_test_suite.py
+
+    - name: Run Bostrom Superintelligence Misalignment Tests (4 Suites)
+      run: |
+        cd projects/cara-alignment
+        python3 benchmarks/test_bostrom_paperclip.py
+        python3 benchmarks/test_bostrom_resource_hoard.py
+        python3 benchmarks/test_bostrom_silent_sensor.py
+        python3 benchmarks/test_bostrom_treacherous_turn.py
+
+    - name: Run 8-Scenario Replication Kit (Mock Verification)
+      run: |
+        cd projects/cara-alignment
+        python3 run_experiment.py --mock --n 1 --out ci_results.jsonl
+        python3 analyze.py ci_results.jsonl
