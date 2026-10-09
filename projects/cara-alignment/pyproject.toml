@@ -1,0 +1,31 @@
+[build-system]
+requires = ["setuptools>=61.0", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "cara-engine"
+version = "0.1.0"
+description = "Context-Aligned Reasoning Architecture (CARA): Zero-Dependency Runtime Invariant Gating and Anti-Drift Middleware for Autonomous Agents"
+readme = "README.md"
+authors = [
+    { name = "Chandan Rai", email = "seekersecondary1987@gmail.com" }
+]
+license = { text = "Apache-2.0" }
+classifiers = [
+    "Programming Language :: Python :: 3",
+    "License :: OSI Approved :: Apache Software License",
+    "Operating System :: OS Independent",
+    "Topic :: Scientific/Engineering :: Artificial Intelligence",
+    "Topic :: Security",
+]
+requires-python = ">=3.8"
+dependencies = []
+
+[project.optional-dependencies]
+pydantic = ["pydantic>=2.0.0"]
+langchain = ["langchain-core>=0.1.0"]
+
+[project.urls]
+"Homepage" = "https://github.com/seeker1987/Alignment"
+"Bug Tracker" = "https://github.com/seeker1987/Alignment/issues"
+"Documentation" = "https://github.com/seeker1987/Alignment/tree/main/projects/cara-alignment"
