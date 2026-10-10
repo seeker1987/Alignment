@@ -1,5 +1,7 @@
 # Context-Aligned Reasoning Architecture (CARA)
 
+> **Status:** Prototype; pipeline tested with mock models; real-model results in the [hark repository](https://github.com/seeker1987/hark).
+
 A structural control framework for context-sensitive AI alignment and the mitigation of **Absorption Drift**.
 
 ---
@@ -49,8 +51,7 @@ CARA addresses this structural vulnerability by decoupling **task deliberation**
 
 ---
 
-## Running Benchmarks
+## Evaluation & Data
 
-```bash
-python3 benchmarks/run_benchmarks.py
-```
+* **Mock Pipeline Output:** The synthetic 1,152-trial baseline used for harness testing is archived in [`mock/`](mock/).
+* **Real Frontier Evaluations:** For closed-loop trials on real models (NVIDIA `nemotron-3-super-120b`, `gpt-oss-20b`, and `gemini-3.8-flash`), see the [hark repository](https://github.com/seeker1987/hark) and [`live_benchmark_results.jsonl`](live_benchmark_results.jsonl).

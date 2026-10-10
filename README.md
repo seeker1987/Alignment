@@ -1,11 +1,13 @@
 # Context-Aligned Reasoning Architecture (CARA) & AI Alignment Research Workspace
 
 [![CI Status](https://img.shields.io/badge/CI-Passing-brightgreen.svg)](.github/workflows/test_and_verify.yml)
+[![Status](https://img.shields.io/badge/Status-Prototype-orange.svg)](#status)
 [![License](https://img.shields.io/badge/License-Apache_2.0-blue.svg)](LICENSE)
 [![Python](https://img.shields.io/badge/Python-3.8%20%7C%203.9%20%7C%203.10%20%7C%203.11%20%7C%203.12-blue.svg)](pyproject.toml)
-[![arXiv](https://img.shields.io/badge/arXiv-Preprint_Ready-red.svg)](projects/cara-alignment/docs/paper.tex)
 
-A production-ready structural alignment framework that decouples task deliberation from execution authority to mitigate **Absorption Drift** in long-horizon autonomous agents.
+> **Status:** Prototype; pipeline tested with mock models; real-model results in the [hark repository](https://github.com/seeker1987/hark).
+
+A structural alignment framework that decouples task deliberation from execution authority to mitigate **Absorption Drift** in long-horizon autonomous agents.
 
 ---
 
@@ -30,8 +32,8 @@ python3 projects/cara-alignment/demo.py
 | :--- | :--- | :--- |
 | **Academic Manuscript (LaTeX)** | [`projects/cara-alignment/docs/paper.tex`](projects/cara-alignment/docs/paper.tex) | Full formal preprint ready for arXiv submission |
 | **Executive Presentation Deck** | [Google Slides Deck](https://docs.google.com/presentation/d/1XGZORgaza9G8Pe8H0e5SUY3KZAMYi7mph1RrIY7laU4/edit) | 8-slide visual presentation on CARA, MTA, and benchmarks |
-| **Production Blueprint & Testbed** | [`docs/PRODUCTION_BLUEPRINT_AND_TESTS.md`](projects/cara-alignment/docs/PRODUCTION_BLUEPRINT_AND_TESTS.md) | Formal specifications for the 4-head encoder and 6 test suites |
-| **Bostrom Superintelligence Analysis** | [`docs/BOSTROM_ANALYSIS_AND_LIMITS.md`](projects/cara-alignment/docs/BOSTROM_ANALYSIS_AND_LIMITS.md) | Stress tests across perverse instantiation and treacherous turns |
+| **Real Frontier Experiments** | [hark repository](https://github.com/seeker1987/hark) | 1,600+ closed-loop trials across `nemotron-3-super-120b`, `gpt-oss-20b`, and Grounded Binding |
+| **Mock Pipeline Test Data** | [`projects/cara-alignment/mock/`](projects/cara-alignment/mock/) | Synthetic 1,152-trial pipeline verification dataset |
 | **Consolidated Research Record** | [`docs/CIO_CONSOLIDATED_RESEARCH_RECORD.md`](projects/cara-alignment/docs/CIO_CONSOLIDATED_RESEARCH_RECORD.md) | Master research log, epistemic guardrails, and 12 open risks |
 
 ---
@@ -59,9 +61,9 @@ pip install -e .
 ```python
 from cara import ValidityInvariant, GoalContextBinding, wrap_agent
 
-# 1. Define safety invariants
+# 1. Define safety invariants with source span provenance
 invariants = [
-    ValidityInvariant("V_BUDGET", "Spend Cap", lambda state: state.get("cost", 0) <= 50)
+    ValidityInvariant("V_BUDGET", "Spend Cap", lambda state: state.get("cost", 0) <= 50, source_span="spend limit")
 ]
 
 # 2. Bind the goal
@@ -84,16 +86,4 @@ def my_agent(state):
 Run the entire test suite locally:
 ```bash
 ./scripts/automate_all.sh
-```
-
-Or run individual benchmark suites:
-```bash
-# 1. Multi-domain replication suite (1,152 trials)
-python3 projects/cara-alignment/run_experiment.py --mock --n 3
-
-# 2. Statistical analysis generator
-python3 projects/cara-alignment/analyze.py results.jsonl
-
-# 3. Live frontier API benchmark
-python3 projects/cara-alignment/benchmarks/live_api_benchmark.py
 ```
