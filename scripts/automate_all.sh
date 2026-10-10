@@ -16,19 +16,25 @@ echo "CARA Engine Dir: $CARA_DIR"
 echo ""
 
 # 1. Verify Unit Tests
-echo "[1/4] Running Core Package Unit Tests..."
+echo "[1/5] Running Core Package Unit Tests..."
 python3 "$CARA_DIR/tests/test_package.py"
 echo ">>> Unit Tests: PASSED"
 echo ""
 
-# 2. Verify Production Invariant Suites
-echo "[2/4] Running Production Invariant Suites..."
+# 2. Verify Invariant Auto-Synthesizer Tests
+echo "[2/5] Running Invariant Auto-Synthesizer Tests..."
+python3 "$CARA_DIR/tests/test_synthesizer.py"
+echo ">>> Synthesizer Tests: PASSED"
+echo ""
+
+# 3. Verify Production Invariant Suites
+echo "[3/5] Running Production Invariant Suites..."
 python3 "$CARA_DIR/benchmarks/production_test_suite.py"
 echo ">>> Production Invariants: PASSED"
 echo ""
 
-# 3. Verify Bostrom Superintelligence Misalignment Tests
-echo "[3/4] Running Bostrom Misalignment Stress Tests..."
+# 4. Verify Bostrom Superintelligence Misalignment Tests
+echo "[4/5] Running Bostrom Misalignment Stress Tests..."
 python3 "$CARA_DIR/benchmarks/test_bostrom_paperclip.py"
 python3 "$CARA_DIR/benchmarks/test_bostrom_resource_hoard.py"
 python3 "$CARA_DIR/benchmarks/test_bostrom_silent_sensor.py"
@@ -36,8 +42,8 @@ python3 "$CARA_DIR/benchmarks/test_bostrom_treacherous_turn.py"
 echo ">>> Bostrom Stress Tests: PASSED (4/4)"
 echo ""
 
-# 4. Verify Live Multi-Provider API Harness
-echo "[4/4] Verifying Live Multi-Provider API Benchmark Harness..."
+# 5. Verify Live Multi-Provider API Harness
+echo "[5/5] Verifying Live Multi-Provider API Benchmark Harness..."
 python3 "$CARA_DIR/benchmarks/live_api_benchmark.py"
 echo ">>> Live Benchmark Harness: VERIFIED"
 echo ""
