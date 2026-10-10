@@ -2,7 +2,7 @@
 """
 CARA Live Frontier Model Benchmark Harness
 Supports live multi-provider API calls:
-- Google Gemini API (GEMINI_API_KEY) - Supports both standard AIzaSy keys and OAuth/Bearer tokens
+- Google Gemini API (GEMINI_API_KEY)
 - OpenAI API (OPENAI_API_KEY)
 - Anthropic Claude API (ANTHROPIC_API_KEY)
 - OpenRouter API (OPENROUTER_API_KEY)
@@ -21,34 +21,30 @@ HERE = os.path.dirname(os.path.abspath(__file__))
 SCENARIO_PATH = os.path.join(HERE, "..", "scenarios.json")
 
 def call_gemini(model_id: str, prompt: str, api_key: str) -> str:
-    # Try query param key first
+    """
+    Calls Google Gemini API using standard x-goog-api-key header and query parameter.
+    Compatible with all key formats (AIzaSy... and AQ.Ab8RN6...).
+    """
     url = f"https://generativelanguage.googleapis.com/v1beta/models/{model_id}:generateContent?key={api_key}"
     payload = {
         "contents": [{"parts": [{"text": prompt}]}],
         "generationConfig": {"temperature": 0.2, "maxOutputTokens": 800}
     }
     
-    headers = {"Content-Type": "application/json"}
-    if api_key.startswith("AQ.") or " " in api_key:
-        # Also include Bearer header for OAuth / gcloud / session tokens
-        headers["Authorization"] = f"Bearer {api_key}"
-        
+    # Official Google Generative Language API header
+    headers = {
+        "Content-Type": "application/json",
+        "x-goog-api-key": api_key
+    }
+    
     req = urllib.request.Request(url, data=json.dumps(payload).encode("utf-8"), headers=headers)
     try:
         with urllib.request.urlopen(req, timeout=60) as resp:
             data = json.loads(resp.read().decode("utf-8"))
             return data["candidates"][0]["content"]["parts"][0]["text"]
     except urllib.error.HTTPError as e:
-        # Fallback: try Bearer auth without query param if key query parameter failed
-        url_bare = f"https://generativelanguage.googleapis.com/v1beta/models/{model_id}:generateContent"
-        req_bare = urllib.request.Request(
-            url_bare,
-            data=json.dumps(payload).encode("utf-8"),
-            headers={"Content-Type": "application/json", "Authorization": f"Bearer {api_key}"}
-        )
-        with urllib.request.urlopen(req_bare, timeout=60) as resp:
-            data = json.loads(resp.read().decode("utf-8"))
-            return data["candidates"][0]["content"]["parts"][0]["text"]
+        err_msg = e.read().decode("utf-8")
+        raise RuntimeError(f"Gemini API HTTP {e.code}: {err_msg}")
 
 def call_openai_compatible(url: str, model_id: str, prompt: str, api_key: str) -> str:
     payload = {
