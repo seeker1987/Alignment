@@ -1,89 +1,57 @@
-# Context-Aligned Reasoning Architecture (CARA) & AI Alignment Research Workspace
+# AI Alignment & Cognitive Architectures Research Workspace
 
 [![CI Status](https://img.shields.io/badge/CI-Passing-brightgreen.svg)](.github/workflows/test_and_verify.yml)
-[![Status](https://img.shields.io/badge/Status-Prototype-orange.svg)](#status)
 [![License](https://img.shields.io/badge/License-Apache_2.0-blue.svg)](LICENSE)
 [![Python](https://img.shields.io/badge/Python-3.8%20%7C%203.9%20%7C%203.10%20%7C%203.11%20%7C%203.12-blue.svg)](pyproject.toml)
 
-> **Status:** Prototype; pipeline tested with mock models; real-model results in the [hark repository](https://github.com/seeker1987/hark).
+This repository holds research projects, theoretical specifications, and benchmark code on AI alignment, runtime verification, and agent governance.
 
-A structural alignment framework that decouples task deliberation from execution authority to mitigate **Absorption Drift** in long-horizon autonomous agents.
+**Status in one line:** proposals and prototype code. Nothing here is a validated result. Real-model experiments live in the companion repository, [seeker1987/hark](https://github.com/seeker1987/hark).
 
 ---
 
-## ⚡ Quickstart (Run the Interactive Live Demo)
+## Repository Structure
 
-Experience the difference between an unconstrained runaway agent and CARA runtime invariant gating in 10 seconds:
-
-```bash
-# Clone the repository
-git clone https://github.com/seeker1987/Alignment.git
-cd Alignment
-
-# Run the colorized terminal playground
-python3 projects/cara-alignment/demo.py
+```
+Alignment/
+├── projects/
+│   ├── cara-alignment/        # Context-Aligned Reasoning Architecture (CARA)
+│   │   ├── docs/              # White paper, blueprints & consolidated research record
+│   │   ├── src/cara/          # Reference engine: zero-dependency invariant checker & action governor
+│   │   ├── benchmarks/        # Test harnesses, microCARA ablation & local/live API benchmarks
+│   │   ├── mock/              # MOCK output (results.jsonl, summary.md) from synthetic runs
+│   │   ├── run_experiment.py  # v0.1 replication kit; --mock mode generates fake data
+│   │   ├── demo.py            # Educational interactive trajectory demo
+│   │   └── tests/             # Unit tests for governor and invariant synthesizer
+│   └── templates/             # Starter scaffold for upcoming research projects
+├── docs/                      # Grant application packages (Google TRC, OpenAI) & forum posts
+├── scripts/                   # Master automation verification scripts
+├── README.md
+└── .gitignore
 ```
 
 ---
 
-## 📚 Key Publications & Artifacts
+## Active Projects
 
-| Asset | Location | Summary |
-| :--- | :--- | :--- |
-| **Academic Manuscript (LaTeX)** | [`projects/cara-alignment/docs/paper.tex`](projects/cara-alignment/docs/paper.tex) | Full formal preprint ready for arXiv submission |
-| **Executive Presentation Deck** | [Google Slides Deck](https://docs.google.com/presentation/d/1XGZORgaza9G8Pe8H0e5SUY3KZAMYi7mph1RrIY7laU4/edit) | 8-slide visual presentation on CARA, MTA, and benchmarks |
-| **Real Frontier Experiments** | [hark repository](https://github.com/seeker1987/hark) | 1,600+ closed-loop trials across `nemotron-3-super-120b`, `gpt-oss-20b`, and Grounded Binding |
-| **Mock Pipeline Test Data** | [`projects/cara-alignment/mock/`](projects/cara-alignment/mock/) | Synthetic 1,152-trial pipeline verification dataset |
-| **Consolidated Research Record** | [`docs/CIO_CONSOLIDATED_RESEARCH_RECORD.md`](projects/cara-alignment/docs/CIO_CONSOLIDATED_RESEARCH_RECORD.md) | Master research log, epistemic guardrails, and 12 open risks |
+| Project | Domain | Status | Key Focus |
+| --- | --- | --- | --- |
+| [CARA Alignment](projects/cara-alignment) | Agent alignment & governance | **Prototype.** Pipeline tested with mock models only; real-model results are in the [hark repository](https://github.com/seeker1987/hark) | Proposed mitigation of *absorption drift* via goal-context binding and runtime governance |
 
 ---
 
-## 📖 "For Dummies" Plain-English Guides
+## What has and has not been shown
 
-For an intuitive, non-technical explanation of the four canonical Bostrom misalignment tests:
-1. 📄 **[Step 1: The Paperclip Problem](STEP_1_PAPERCLIP_FOR_DUMMIES.md)** *(Perverse Instantiation)*
-2. 📄 **[Step 2: The Greedy Power-Grab](STEP_2_RESOURCE_HOARDING_FOR_DUMMIES.md)** *(Instrumental Convergence)*
-3. 📄 **[Step 3: The Sneaky Quiet Alarm](STEP_3_SILENT_SENSOR_FOR_DUMMIES.md)** *(Sensor Deception)*
-4. 📄 **[Step 4: The Fake Good Guy](STEP_4_DECEPTION_AND_SANDBOX_FOR_DUMMIES.md)** *(The Treacherous Turn)*
-
----
-
-## 🛠️ The `cara-engine` Python Package
-
-A zero-dependency Python package installable via pip:
-
-```bash
-cd projects/cara-alignment
-pip install -e .
-```
-
-### Protect Any Agent in 3 Lines:
-```python
-from cara import ValidityInvariant, GoalContextBinding, wrap_agent
-
-# 1. Define safety invariants with source span provenance
-invariants = [
-    ValidityInvariant("V_BUDGET", "Spend Cap", lambda state: state.get("cost", 0) <= 50, source_span="spend limit")
-]
-
-# 2. Bind the goal
-binding = GoalContextBinding(
-    goal="Optimize analytics",
-    latent_purpose="Run analytics within $50 budget",
-    invariants=invariants
-)
-
-# 3. Decorate your agent
-@wrap_agent(binding)
-def my_agent(state):
-    return "expensive_action"
-```
+- **Absorption drift is a hypothesis.** It has not been demonstrated. In the companion [hark experiments](https://github.com/seeker1987/hark) (`gpt-oss-20b`, closed-loop agent, 8 synthetic scenarios), the baseline agent continued after an invalidating change in only 1 of 49 episodes (2%). Details and caveats are in the hark repo.
+- **CARA's benefit has not been measured.** The baseline barely drifts in these settings, so there is little for CARA to improve on. Grounded CARA kept detection intact (0 of 87 continuations) and cut false interruptions to 14%, against 7% with no binding. The comparison is underpowered and not from the same session.
+- **Files marked MOCK are not evidence.** `mock/results.jsonl` and `mock/summary.md` in `projects/cara-alignment/mock/` were produced by `run_experiment.py --mock`. The mock models have hard-coded probabilities (for example, halting probability falls linearly with depth for the "absorbing" mock). Their depth effects and mitigation rates reflect those formulas, not any real model.
+- **MTA is not tested.** The Metacognitive Transformer Architecture needs training access and is out of scope for every experiment so far.
+- **Exploratory API trial:** Live testing on Google's `gemini-3.8-flash` confirmed the model halts on explicit quiet invalidations, but encountered Google's 20-request/day free-tier ceiling, demonstrating why compute grants (e.g. TRC) are needed to scale evaluation.
 
 ---
 
-## 🧪 Automated Testing & CI/CD
+## Adding New Projects
 
-Run the entire test suite locally:
-```bash
-./scripts/automate_all.sh
-```
+1. Duplicate the scaffold in `projects/templates/new-project/`.
+2. Follow the standard directory layout (`docs/`, `src/`, `benchmarks/`).
+3. Register the new initiative in the table above, with a status that matches the evidence.

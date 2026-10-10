@@ -1,7 +1,7 @@
 # CIO, Absorption Drift, CARA and MTA: Consolidated Research Record
 *Master Record Updated: 10 October 2026*
 
-> **Project Status Classification:** Prototype; pipeline tested with mock models; real-model closed-loop empirical results documented in the [hark repository](https://github.com/seeker1987/hark).
+> **Status in one line:** Proposals and prototype code. Nothing here is a validated result. Real-model experiments live in the companion repository, [seeker1987/hark](https://github.com/seeker1987/hark).
 
 ---
 
@@ -18,40 +18,63 @@
 
 ---
 
-## 2. Empirical Research Progression: The Hark Benchmark Series (v0.1 – v0.4)
+## 2. Epistemic Guardrails on Intent Inference
 
-### v0.1: Synthetic Pipeline Scaffolding
-* Initial 8-scenario suite tested against deterministic mock generators (`mock:absorbing`, `mock:vigilant`). 
-* Used exclusively for verification of scoring algorithms and bootstrap estimators; archived in `mock/`.
-
-### v0.2: Preregistered Frontier Trials (861 Trials on NVIDIA APIs)
-* Tested `nvidia/nemotron-3-super-120b` and `openai/gpt-oss-20b` under frozen SHA-256 protocols.
-* **Key Finding:** H1 (that drift surges with task momentum on simple prompts) was **not supported**. Capable frontier models demonstrated low baseline drift (0%–3%), spotting explicit invalidations reliably. The few failures were at Depth 1 where multi-hop inference was required.
-
-### v0.3: Closed-Loop CARA Benchmark & The False Interruption Trap (480 Episodes)
-* Tested multi-step agent trajectories on `gpt-oss-20b`.
-* **Key Finding:** Baseline drift remained low (2%), but ungrounded CARA suffered a **65% False Interruption Rate (FIR)**, halting 50% of completely normal control runs.
-* **Root Cause: "Compile-Time Assumption Hallucination":** When compiling the Goal-Context Binding Record ($B_t$), the LLM compiler invented unstated preconditions the operator never set (e.g. *"installed version must be exactly 2.4.1"*). The governor panicked when telemetry omitted these fields.
-
-### v0.4: Grounded Binding Breakthrough (320 Episodes)
-* Introduced **Grounded Binding**: Every validity condition $V_t$ must cite an exact source span from the operator's prompt, or it is rejected.
-* **Results:**
-  * False Interruption Rate dropped from **65% down to 14%** (-51 points, 95% CI [-76, -27]).
-  * Inappropriate Continuation Rate remained at **0% (0/44 continued after invalidation)**.
-  * Runtime token overhead decreased from +58% to +25%.
+The CIO framework strictly forbids an AI from confidently inventing a user's "unconscious" or "true intent" without evidence. 
+* Intent extrapolation must be bounded by explicit evidence.
+* Epistemic uncertainty ($U_t$) must be quantified.
+* High-consequence ambiguity must trigger clarification or escalation (`SUSPEND`), rather than autonomous extrapolation.
 
 ---
 
-## 3. Epistemic Guardrails & Methodological Lessons
+## 3. Methodological Audit: Early Pilot Learnings
 
-1. **Grounding Over Generation:** The interpretation layer must be grounded, not purely generative. Invariants without direct prompt provenance cause operational paralysis.
-2. **Epistemic Uncertainty Mapping ($U_t$):** Telemetry fields that cannot be observed must be mapped to uncertainty ($U_t$), never treated as hard invariant violations ($V_t$).
-3. **Decoy Discrimination:** Alarms unrelated to active validity invariants (e.g., pump vibration in an irrigation check) must be filtered to prevent false halts.
-4. **The Paradigm Shift:** For capable current models, the empirical bottleneck is not memory persistence, but **salience calibration and grounded interpretation**.
+Previous exploratory API runs on free/routed models (e.g., OpenRouter free tier) exposed critical methodological traps:
+1. **Model-Switching Artifacts:** Automatic routers selected different underlying models between baseline and CIO conditions.
+2. **Classifier Fallbacks:** In some runs, CIO inputs triggered safety-classifier models that returned generic safety tags rather than task reasoning.
+3. **Requirement:** All future empirical claims must use fixed model identifiers (`provider:model_id`), identical hyperparameters, and repeated trials with full logging of null and negative results.
 
 ---
 
-## 4. The 12 Unresolved Scientific Risks
+## 8A. Controlled Runs Since the 9 October Record (The Hark Experiments)
+
+Since the early OpenRouter pilots, three preregistered experiments have been run on a fixed model through NVIDIA's free API (companion repository: [seeker1987/hark](https://github.com/seeker1987/hark)). Each preregistration was frozen with file hashes before its runs, and deviations are logged.
+
+**v0.2: Scripted transcripts, one decision per trial** (861 usable records; `gpt-oss-20b` and `nemotron-3-super-120b`; a third model was rate-limited out).
+Drift after an invalidating cue was near zero and did not grow with task depth. The few drifts were at depth 1, on cues that needed inference, and the same-thread probe usually showed the model knew the condition had failed. The hypothesis that drift grows with task momentum was not supported. Cell sizes were small (n=2 per cell), so several contrasts were "not enough data".
+
+**v0.3: Closed-loop agent, CARA benchmark** (`gpt-oss-20b`, 480 episodes, 0 errors).
+- Baseline continued after an invalidating shift in 1 of 49 episodes (2%, CI 0-11%). Shift position (step 4 vs 16) made no difference.
+- False interruptions on benign episodes: baseline 7%, Stage 1 binding 36%, full CARA governor 65%.
+- Cause: the LLM compiling the binding record invented validity conditions the operator never set, or named telemetry fields that did not exist.
+- Cost: about +58% calls per mutating step, above the < 20% target.
+
+**v0.4: Grounded binding** (`gpt-oss-20b`, 320 episodes).
+Requiring each condition to quote the operator's text brought false interruptions down to 17% (Stage 1) and 14% (CARA, CI 8-22%), with 0 of 87 continuations after invalidation and about +25% overhead. Unrelated alarm lines ("decoys") still halted 28-31% of runs, against 22% for baseline.
+
+**What this does and does not establish:**
+- For this model and these scenarios, absorption drift was not observed. This is a null result on one complete model with synthetic scenarios, not a refutation.
+- CARA's benefit is currently unmeasurable: the baseline fails too rarely to leave room for improvement.
+- The binding layer is itself a failure source unless grounded in operator text and observed telemetry. The bottleneck found here is calibrated interpretation, not persistence.
+- The v0.4 comparison with baseline uses baseline data from an earlier session; the CARA-minus-baseline false-interruption difference (+6 points, CI -4 to +17) is inconclusive.
+- Nemotron runs for v0.3 and v0.4 are not in the repository yet, so the preregistered "at least 2 of 3 models" rules cannot be evaluated.
+- MTA has not been tested. Arm 6 needs training access and is out of scope.
+- In our exploratory test with Google's `gemini-3.8-flash`, the model halted reliably on explicit quiet invalidations, but encountered Google's 20-request/day free-tier ceiling, demonstrating why compute grants (e.g. TRC) are needed to scale evaluation.
+
+**Correction to repository status:** The Alignment repository's `results.jsonl` and `summary.md` are mock-model output (hard-coded probabilities) and are not evidence. They are quarantined in `projects/cara-alignment/mock/`, and the "Stage 1 Validated" status is retracted in favor of "Prototype".
+
+---
+
+## 8.3. What Has Not Happened (As of 10 October 2026)
+
+- No frontier-model evaluation has been completed. Complete results exist for one small open model only.
+- No empirical finding establishes CARA's effectiveness, and none establishes an MTA mechanism.
+- Absorption drift has not been demonstrated; current evidence points the other way for the tested model.
+- Mock-data summaries must not be cited as results.
+
+---
+
+## 12. The 12 Unresolved Scientific Risks
 
 1. **Novelty:** Distinguishing absorption drift empirically from goal misgeneralization, reward hacking, and context-window loss.
 2. **Operational Definition:** Defining non-arbitrary criteria for when an objective transitions from valid to invalid.
@@ -65,3 +88,14 @@
 10. **Mechanistic Attribution:** Separating the effect of reflection prompts from the effect of hard runtime gating.
 11. **MTA Feasibility:** Assessing whether internal dual-stream attention offers measurable advantages over external controllers.
 12. **Normative Governance:** Resolving conflicting stakeholder values without relying on a single arbitrary scalar score.
+
+---
+
+## 13. Next Steps (Replacement for "Immediate" Steps)
+
+1. **Label or remove mock outputs:** Quarantined mock outputs into `projects/cara-alignment/mock/` and corrected the status line.
+2. **Add harder environments where the baseline actually fails:** Introduce cues visible only if the agent actively requests them, summarized context over 100+ steps, and weaker or long-horizon tasks.
+3. **Run concurrent baselines:** Re-run the baseline in the exact same session as any CARA arm it is compared against.
+4. **Complete and report Nemotron runs:** Finish logging Nemotron trials, including all nulls, timeouts, and errors.
+5. **Verify error retries:** Confirm that skipped error records in v0.2 (88 records) were retried according to preregistered guidelines.
+6. **Maintain modest claims:** Frame the work strictly as a falsifiable proposal with early null results, plus a documented finding that ungrounded binding causes false interruptions.
