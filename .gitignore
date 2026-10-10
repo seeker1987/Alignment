@@ -36,3 +36,7 @@ ENV/
 .vscode/
 *.swp
 *.swo
+
+# Sub-repositories
+hark/
+alignment-laboratory/
