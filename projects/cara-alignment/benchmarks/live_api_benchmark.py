@@ -1,11 +1,9 @@
 #!/usr/bin/env python3
 """
 CARA Live Frontier Model Benchmark Harness
-Supports live multi-provider API calls:
-- Google Gemini API (GEMINI_API_KEY) with automatic dynamic model discovery (ModelService.ListModels)
+Supports live multi-provider API calls with auto-adaptation:
+- Google Gemini API (GEMINI_API_KEY) with dynamic Google model recommendation parsing
 - OpenAI API (OPENAI_API_KEY)
-- Anthropic Claude API (ANTHROPIC_API_KEY)
-- OpenRouter API (OPENROUTER_API_KEY)
 - Offline Mock Mode
 """
 
@@ -13,44 +11,19 @@ import os
 import sys
 import json
 import time
+import re
 import urllib.request
 import urllib.error
 
 HERE = os.path.dirname(os.path.abspath(__file__))
 SCENARIO_PATH = os.path.join(HERE, "..", "scenarios.json")
 
-RESOLVED_GEMINI_MODEL = None
-
-def get_available_gemini_model(api_key: str) -> str:
-    """Queries Google's ModelService.ListModels to find the exact active model on this project."""
-    global RESOLVED_GEMINI_MODEL
-    if RESOLVED_GEMINI_MODEL:
-        return RESOLVED_GEMINI_MODEL
-        
-    url = f"https://generativelanguage.googleapis.com/v1beta/models?key={api_key}"
-    headers = {"Content-Type": "application/json", "x-goog-api-key": api_key}
-    req = urllib.request.Request(url, headers=headers)
-    
-    try:
-        with urllib.request.urlopen(req, timeout=30) as resp:
-            data = json.loads(resp.read().decode("utf-8"))
-            models = data.get("models", [])
-            # Find models supporting generateContent
-            flash_models = [m["name"].replace("models/", "") for m in models if "generateContent" in m.get("supportedGenerationMethods", []) and "flash" in m["name"].lower()]
-            other_models = [m["name"].replace("models/", "") for m in models if "generateContent" in m.get("supportedGenerationMethods", [])]
-            
-            chosen = (flash_models or other_models or ["gemini-1.5-flash-latest"])[0]
-            print(f"[Model Discovery] Successfully found {len(models)} models. Selected: {chosen}")
-            RESOLVED_GEMINI_MODEL = chosen
-            return chosen
-    except Exception as e:
-        print(f"[Model Discovery Warning] Could not list models ({e}). Falling back to 'gemini-1.5-flash-latest'")
-        RESOLVED_GEMINI_MODEL = "gemini-1.5-flash-latest"
-        return RESOLVED_GEMINI_MODEL
+ACTIVE_GEMINI_MODEL = "gemini-3.8-flash"
 
 def call_gemini(model_id: str, prompt: str, api_key: str) -> str:
-    active_model = get_available_gemini_model(api_key)
-    url = f"https://generativelanguage.googleapis.com/v1beta/models/{active_model}:generateContent?key={api_key}"
+    global ACTIVE_GEMINI_MODEL
+    target_model = ACTIVE_GEMINI_MODEL or model_id
+    
     payload = {
         "contents": [{"parts": [{"text": prompt}]}],
         "generationConfig": {"temperature": 0.2, "maxOutputTokens": 800}
@@ -59,14 +32,24 @@ def call_gemini(model_id: str, prompt: str, api_key: str) -> str:
         "Content-Type": "application/json",
         "x-goog-api-key": api_key
     }
+    
+    url = f"https://generativelanguage.googleapis.com/v1beta/models/{target_model}:generateContent?key={api_key}"
     req = urllib.request.Request(url, data=json.dumps(payload).encode("utf-8"), headers=headers)
+    
     try:
         with urllib.request.urlopen(req, timeout=60) as resp:
             data = json.loads(resp.read().decode("utf-8"))
             return data["candidates"][0]["content"]["parts"][0]["text"]
     except urllib.error.HTTPError as e:
         err_msg = e.read().decode("utf-8")
-        raise RuntimeError(f"HTTP {e.code} on {active_model}: {err_msg}")
+        # Automatically catch Google's suggestion: "Please update your code to use models/<new-model>"
+        match = re.search(r"use models/([a-zA-Z0-9\.\-_]+)", err_msg)
+        if match:
+            suggested = match.group(1)
+            print(f"\n[Auto-Adaptation] Google suggested model '{suggested}'. Retrying with '{suggested}'...")
+            ACTIVE_GEMINI_MODEL = suggested
+            return call_gemini(suggested, prompt, api_key)
+        raise RuntimeError(f"HTTP {e.code} on {target_model}: {err_msg}")
 
 def call_openai_compatible(url: str, model_id: str, prompt: str, api_key: str) -> str:
     payload = {
@@ -130,7 +113,7 @@ def run_live_trial(model_spec: str, scenario: dict, cue: str, depth: int) -> dic
         action_class = "OTHER"
 
     return {
-        "model": RESOLVED_GEMINI_MODEL or model_spec,
+        "model": ACTIVE_GEMINI_MODEL if provider == "gemini" else model_spec,
         "scenario": scenario["id"],
         "cue": cue,
         "depth": depth,
@@ -158,15 +141,8 @@ def main():
         print("\nNotice: No API keys found in environment.")
         return
 
-    if has_gemini:
-        api_key = os.environ.get("GEMINI_API_KEY")
-        print("\nConnecting to Google AI Studio...")
-        chosen_model = get_available_gemini_model(api_key)
-        model_target = f"gemini:{chosen_model}"
-    else:
-        model_target = "openai:gpt-4o"
-        
-    print(f"Target Model: {model_target}")
+    model_target = f"gemini:{ACTIVE_GEMINI_MODEL}" if has_gemini else "openai:gpt-4o"
+    print(f"\nLive API Key detected! Target: {model_target}")
     print("-" * 70)
     
     results = []
